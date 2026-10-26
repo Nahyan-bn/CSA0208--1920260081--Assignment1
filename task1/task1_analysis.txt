@@ -1,0 +1,53 @@
+======================================================================
+TASK 1: UNDERSTAND THE PROBLEM AND IDENTIFY THE DATA
+======================================================================
+
+1. INPUTS IDENTIFIED:
+   - previous_reading: Unsigned 16-bit hardware meter register reading from last cycle.
+   - current_reading: Unsigned 16-bit hardware meter register reading from current cycle.
+   - household_number: Unique identification integer for billing and metering.
+   - category: Consumer tier code (e.g., Domestic, Commercial, Agriculture).
+
+2. OUTPUTS COMPUTED:
+   - units_consumed: Total energy consumed in the billing cycle (kWh).
+   - energy_charge: Computed charge based on progressive consumption slabs.
+   - fixed_charge: Standing recurring charge per billing cycle.
+   - total_bill: Aggregated final amount due (fixed_charge + energy_charge).
+
+3. CONSTANTS:
+   - SLAB1_UNITS: 100 units (First tier limit).
+   - SLAB2_UNITS: 200 units (Second tier limit).
+   - RATE1_PAISE: 0 paise/unit (First 100 units free).
+   - RATE2_PAISE: 225 paise/unit (Rs 2.25/unit).
+   - RATE3_PAISE: 450 paise/unit (Rs 4.50/unit above 200).
+   - FIXED_CHARGE_PAISE: 5000 paise (Rs 50.00).
+   - METER_MODULUS: 65536 (Hardware 16-bit overflow boundary).
+
+4. DATA CHARACTERISTICS:
+   - Negative values: Units consumed and bill amounts must NEVER be negative.
+   - Fractional values: Financial currency contains fractional rupees (paise). Handled
+     strictly via discrete integer paise to prevent IEEE 754 precision drift.
+   - Large values: Scalable to district level (800,000 households). Aggregate district
+     billing exceeds Rs 50 crore (> 5*10^9 paise), necessitating 64-bit integer accumulators.
+
+5. CORE BILLING RULES:
+   - Rule 1: Units consumed >= 0 under all hardware register conditions.
+   - Rule 2: Total bill = Energy Charge + Fixed Charge.
+   - Rule 3: Energy Charge = sum(units_in_slab_i * rate_i).
+   - Rule 4: Total bill is strictly non-negative.
+   - Rule 5: Monotonicity: d(bill)/d(units) >= 0.
+
+6. ASSUMPTIONS:
+   - The meter counter rolls over at most once during a standard 30-day billing period.
+   - Household ID fits within standard 32-bit unsigned integers.
+
+7. ALTERNATIVE CONCEPT & COMPLEXITY ANALYSIS (STRINGS VS INTEGERS):
+   - If readings are recorded as character strings (e.g., "01530"):
+     * Time Complexity: Converting string digits into arithmetic units or performing
+       digit-by-digit subtraction takes O(d) time, where d is the number of digits.
+       In contrast, unsigned native integer subtraction takes O(1) single-cycle time.
+     * Space Complexity: A 16-bit integer takes exactly 2 bytes. A 5-digit ASCII
+       string ("65535") plus null-terminator ('\0') takes 6 bytes.
+       For 800,000 meters in a district:
+       Integer: 800,000 * 2 bytes = 1.6 MB
+       String:  800,000 * 6 bytes = 4.8 MB (300% memory overhead).

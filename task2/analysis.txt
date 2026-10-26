@@ -1,0 +1,32 @@
+======================================================================
+TASK 2: DATA TYPE SELECTION & ERROR ANALYSIS
+======================================================================
+
+DATA TYPE TABLE:
+- meter_reading: unsigned short (uint16_t), 2 bytes, 0 to 65,535 (USHRT_MAX).
+- units_consumed: unsigned int, 4 bytes, 0 to 4,294,967,295 (UINT_MAX).
+- household_id: unsigned int, 4 bytes, 0 to 4,294,967,295.
+- total_bill: long long (in paise), 8 bytes, -9.22e18 to +9.22e18.
+
+WHY MONEY SHOULD NOT BE STORED AS FLOAT RUPEES:
+Binary float (IEEE 754 32-bit) cannot accurately represent decimal fractions such
+as 0.10 or 2.25 due to lack of exact base-2 powers. When summing 4,000 bills, the
+running accumulator grows large while individual additions remain small. Once the
+exponent difference exceeds 24 bits, mantissa bits are truncated (absorption),
+producing discrepancies of several paise. Using 64-bit integer paise guarantees exact,
+zero-drift decimal accounting.
+
+WHY THE ROLLOVER RESULT IS 256 AND NOT NEGATIVE:
+Under ISO C unsigned arithmetic rules, operations on unsigned types never overflow
+negatively; they wrap modulo (UINT_MAX + 1). For a 16-bit unsigned short, arithmetic
+is performed modulo 65536.
+(current - previous) = 120 - 65400 = -65280.
+-65280 mod 65536 = 256.
+Casting the result to (meter_t) produces exactly 256 without conditionals.
+
+ALTERNATIVE CONCEPT (DOUBLE RUPEES VS LONG PAISE):
+Using double precision (64-bit float) provides 53 bits of mantissa (~15-17 decimal
+digits). While the addition time complexity remains O(1) in hardware, every billing
+operation requires explicit rounding calls (round(x * 100.0) / 100.0) to avoid sub-cent
+drift. Using integer paise requires no rounding during addition, taking identical O(1)
+time with zero accumulated rounding error.
