@@ -1,6 +1,6 @@
 # Grama Jyothi Rural Electricity Billing System
 
-- **Student Name**: [Your Name]
+- **Student Name**: nahyan 
 - **Register Number**: 1920260081
 - **Compiler & Version**: GCC 13 (MinGW-w64 / MSYS2)
 - **Compilation Flags**: `gcc -Wall -Wextra -std=c11`
